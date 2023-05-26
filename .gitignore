@@ -17,3 +17,5 @@ _testmain.go
 # Binary output from `make release`
 funnel
 funnel_*
+
+!cmd/funnel
