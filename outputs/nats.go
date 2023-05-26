@@ -1,11 +1,10 @@
+//go:build !nats
 // +build !nats
 
 package outputs
 
 // This is the nats output writer
 import (
-	"log/syslog"
-
 	"github.com/agnivade/funnel"
 	"github.com/nats-io/go-nats"
 	"github.com/spf13/viper"
@@ -16,7 +15,7 @@ func init() {
 	funnel.RegisterNewWriter("nats", newNATSOutput)
 }
 
-func newNATSOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, error) {
+func newNATSOutput(v *viper.Viper) (funnel.OutputWriter, error) {
 	o := nats.Options{
 		Url:      "nats://" + v.GetString("target.host") + ":" + v.GetString("target.port"),
 		User:     v.GetString("target.user"),
@@ -30,7 +29,6 @@ func newNATSOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, 
 
 	n := &natsOutput{
 		client:  c,
-		logger:  logger,
 		subject: v.GetString("target.subject"),
 	}
 	return n, nil
@@ -39,7 +37,6 @@ func newNATSOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, 
 // natsOutput contains the stuff to publish to nats server
 type natsOutput struct {
 	client  *nats.Conn
-	logger  *syslog.Writer
 	subject string
 }
 

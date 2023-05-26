@@ -2,11 +2,11 @@ package funnel
 
 import (
 	"errors"
-	"log/syslog"
 	"strconv"
 	"strings"
 
 	"github.com/fsnotify/fsnotify"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -65,7 +65,7 @@ type Config struct {
 
 // GetConfig returns the config struct which is then passed
 // to the consumer
-func GetConfig(v *viper.Viper, logger *syslog.Writer) (*Config, chan *Config, OutputWriter, error) {
+func GetConfig(v *viper.Viper) (*Config, chan *Config, OutputWriter, error) {
 	// Set default values. They are overridden by config file values, if provided
 	setDefaults(v)
 	// Create a chan to signal any config reload events
@@ -91,14 +91,14 @@ func GetConfig(v *viper.Viper, logger *syslog.Writer) (*Config, chan *Config, Ou
 	v.OnConfigChange(func(e fsnotify.Event) {
 		if e.Op == fsnotify.Write {
 			if err := validateConfig(v); err != nil {
-				logger.Err(err.Error())
+				logrus.Error(err.Error())
 				return
 			}
 			reloadChan <- getConfigStruct(v)
 		}
 	})
 	// return output writer by passing the viper instance
-	outputWriter, err := GetOutputWriter(v, logger)
+	outputWriter, err := GetOutputWriter(v)
 	if err != nil {
 		return nil, reloadChan, nil, err
 	}

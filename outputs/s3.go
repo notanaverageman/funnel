@@ -1,3 +1,4 @@
+//go:build !disables3
 // +build !disables3
 
 package outputs
@@ -5,7 +6,6 @@ package outputs
 // This is the aws s3 output writer
 import (
 	"bytes"
-	"log/syslog"
 	"strings"
 	"time"
 
@@ -21,7 +21,7 @@ func init() {
 	funnel.RegisterNewWriter("s3", newS3Output)
 }
 
-func newS3Output(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, error) {
+func newS3Output(v *viper.Viper) (funnel.OutputWriter, error) {
 	sess, err := session.NewSession(&aws.Config{Region: aws.String(v.GetString("target.region"))})
 	if err != nil {
 		return nil, err
@@ -31,7 +31,6 @@ func newS3Output(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, er
 
 	s3o := &s3Output{
 		svc:    svc,
-		logger: logger,
 		bucket: v.GetString("target.bucket"),
 	}
 	return s3o, nil
@@ -40,7 +39,6 @@ func newS3Output(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, er
 // s3Output contains the stuff to put objects to s3
 type s3Output struct {
 	svc    *s3.S3
-	logger *syslog.Writer
 	buffer bytes.Buffer
 	bucket string
 }

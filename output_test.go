@@ -1,7 +1,6 @@
 package funnel
 
 import (
-	"log/syslog"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -12,9 +11,7 @@ func TestNilOutputWriter(t *testing.T) {
 	v := viper.New()
 	v.Set(Target, "file")
 
-	logger, _ := syslog.New(syslog.LOG_ERR, "test")
-
-	ow, err := GetOutputWriter(v, logger)
+	ow, err := GetOutputWriter(v)
 	if ow != nil {
 		t.Errorf("Expected nil outputwriter, Got %s", ow)
 	}
@@ -29,9 +26,7 @@ func TestUnregisteredOutputWriter(t *testing.T) {
 	v := viper.New()
 	v.Set(Target, "somethingnotthere")
 
-	logger, _ := syslog.New(syslog.LOG_ERR, "test")
-
-	ow, err := GetOutputWriter(v, logger)
+	ow, err := GetOutputWriter(v)
 	if ow != nil {
 		t.Errorf("Expected nil outputwriter, Got %s", ow)
 	}
@@ -49,9 +44,7 @@ func TestRegisteredOutputWriter(t *testing.T) {
 
 	RegisterNewWriter(target, newTestOutput)
 
-	logger, _ := syslog.New(syslog.LOG_ERR, "test")
-
-	ow, err := GetOutputWriter(v, logger)
+	ow, err := GetOutputWriter(v)
 	if err != nil {
 		t.Errorf("Expected nil error, Got %s", err)
 	}
@@ -61,7 +54,7 @@ func TestRegisteredOutputWriter(t *testing.T) {
 }
 
 // Dummy function and struct types to test out the output registration
-func newTestOutput(v *viper.Viper, logger *syslog.Writer) (OutputWriter, error) {
+func newTestOutput(v *viper.Viper) (OutputWriter, error) {
 	return &testOutput{}, nil
 }
 

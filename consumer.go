@@ -3,13 +3,14 @@ package funnel
 import (
 	"bufio"
 	"io"
-	"log/syslog"
 	"os"
 	"os/signal"
 	"path"
 	"sync"
 	"syscall"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 // Consumer is the main struct which holds all the stuff
@@ -17,7 +18,6 @@ import (
 type Consumer struct {
 	Config        *Config
 	LineProcessor LineProcessor
-	Logger        *syslog.Writer
 	Writer        OutputWriter
 
 	// internal stuff
@@ -51,13 +51,13 @@ func (c *Consumer) Start(inputStream io.Reader) {
 	if c.Config.Target == "file" {
 		// Make the dir along with parents
 		if err := os.MkdirAll(c.Config.DirName, 0775); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 
 		// Create the file
 		if err := c.createNewFile(); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 	}
@@ -77,7 +77,7 @@ outer:
 		select {
 		case err := <-c.errChan: // error channel to get any errors happening
 			// elsewhere. After printing to stderr, it breaks from the loop
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			break outer
 		default:
 			// This will return a line until delimiter
@@ -90,7 +90,7 @@ outer:
 
 			if err != nil {
 				if err != io.EOF {
-					c.Logger.Err(err.Error())
+					logrus.Error(err.Error())
 				}
 				break outer
 			}
@@ -110,24 +110,24 @@ func (c *Consumer) cleanUp() {
 	if c.Config.Target == "file" {
 		// Close file handle
 		if err = c.currFile.Sync(); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 
 		if err = c.currFile.Close(); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 
 		// Rename the currfile to a rolled up one
 		var fileName string
 		if fileName, err = c.rename(); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 
 		if err = c.compress(fileName); err != nil {
-			c.Logger.Err(err.Error())
+			logrus.Error(err.Error())
 			return
 		}
 	} else { // else call the Close function on the writer
@@ -288,7 +288,7 @@ func (c *Consumer) startFeed() {
 		case <-c.done: // Done signal received, close shop
 			ticker.Stop()
 			if err := c.Writer.Flush(); err != nil {
-				c.Logger.Err(err.Error())
+				logrus.Error(err.Error())
 			}
 			c.cleanUp()
 			c.wg.Done()

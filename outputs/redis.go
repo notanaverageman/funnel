@@ -1,11 +1,10 @@
+//go:build !disableredis
 // +build !disableredis
 
 package outputs
 
 // This is redis output writer
 import (
-	"log/syslog"
-
 	"github.com/agnivade/funnel"
 	"github.com/spf13/viper"
 	"gopkg.in/redis.v5"
@@ -16,7 +15,7 @@ func init() {
 	funnel.RegisterNewWriter("redis", newRedisOutput)
 }
 
-func newRedisOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, error) {
+func newRedisOutput(v *viper.Viper) (funnel.OutputWriter, error) {
 	client := redis.NewClient(&redis.Options{
 		Addr:     v.GetString("target.host"),
 		Password: v.GetString("target.password"),
@@ -25,7 +24,6 @@ func newRedisOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter,
 
 	r := &redisOutput{
 		c:       client,
-		logger:  logger,
 		pubChan: v.GetString("target.channel"),
 	}
 	return r, nil
@@ -34,7 +32,6 @@ func newRedisOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter,
 // redisOutput contains the stuff to publis to redis
 type redisOutput struct {
 	c       *redis.Client
-	logger  *syslog.Writer
 	pubChan string
 }
 

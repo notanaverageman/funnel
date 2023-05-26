@@ -1,3 +1,4 @@
+//go:build !disableinfluxdb
 // +build !disableinfluxdb
 
 package outputs
@@ -5,7 +6,6 @@ package outputs
 import (
 	"encoding/json"
 	"errors"
-	"log/syslog"
 	"time"
 
 	"github.com/agnivade/funnel"
@@ -18,7 +18,7 @@ func init() {
 	funnel.RegisterNewWriter("influxdb", newInfluxDBOutput)
 }
 
-func newInfluxDBOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, error) {
+func newInfluxDBOutput(v *viper.Viper) (funnel.OutputWriter, error) {
 	var c influxdb.Client
 	var err error
 	if v.GetString("target.protocol") == "http" {

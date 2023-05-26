@@ -1,14 +1,15 @@
+//go:build !disablekafka
 // +build !disablekafka
 
 package outputs
 
 // This is kafka output writer
 import (
-	"log/syslog"
 	"time"
 
 	"github.com/Shopify/sarama"
 	"github.com/agnivade/funnel"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -17,7 +18,7 @@ func init() {
 	funnel.RegisterNewWriter("kafka", newKafkaOutput)
 }
 
-func newKafkaOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter, error) {
+func newKafkaOutput(v *viper.Viper) (funnel.OutputWriter, error) {
 	// Setting up the kafka config
 	cfg := sarama.NewConfig()
 	cfg.Producer.Compression = sarama.CompressionGZIP
@@ -48,7 +49,6 @@ func newKafkaOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter,
 	k := &kafkaOutput{
 		producer: p,
 		topic:    topic,
-		logger:   logger,
 		msgChan:  make(chan *sarama.ProducerMessage),
 		done:     make(chan struct{}),
 	}
@@ -61,7 +61,6 @@ func newKafkaOutput(v *viper.Viper, logger *syslog.Writer) (funnel.OutputWriter,
 type kafkaOutput struct {
 	producer sarama.AsyncProducer
 	topic    string
-	logger   *syslog.Writer
 	msgChan  chan *sarama.ProducerMessage
 	done     chan struct{}
 }
@@ -97,7 +96,7 @@ func (k *kafkaOutput) startProducerLoop() {
 		case msg := <-k.msgChan:
 			k.producer.Input() <- msg
 		case err := <-k.producer.Errors():
-			k.logger.Err(err.Error())
+			logrus.Error(err.Error())
 		case <-k.done:
 			return
 		}

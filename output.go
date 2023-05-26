@@ -3,7 +3,6 @@ package funnel
 import (
 	"bufio"
 	"io"
-	"log/syslog"
 
 	"github.com/spf13/viper"
 )
@@ -28,7 +27,7 @@ func (e *UnregisteredOutputError) Error() string {
 }
 
 // OutputFactory is a function type which holds the output registry
-type OutputFactory func(v *viper.Viper, logger *syslog.Writer) (OutputWriter, error)
+type OutputFactory func(v *viper.Viper) (OutputWriter, error)
 
 var registeredOutputs = make(map[string]OutputFactory)
 
@@ -40,7 +39,7 @@ func RegisterNewWriter(name string, factory OutputFactory) {
 
 // GetOutputWriter gets the constructor by extracting the target.
 // Then returns the corresponding output writer by calling the constructor
-func GetOutputWriter(v *viper.Viper, logger *syslog.Writer) (OutputWriter, error) {
+func GetOutputWriter(v *viper.Viper) (OutputWriter, error) {
 	target := v.GetString(Target)
 	if target == "file" {
 		return nil, nil
@@ -49,7 +48,7 @@ func GetOutputWriter(v *viper.Viper, logger *syslog.Writer) (OutputWriter, error
 	if !ok {
 		return nil, &UnregisteredOutputError{target}
 	}
-	return w(v, logger)
+	return w(v)
 }
 
 // FileOutput is just an embed type which adds the Close method to buffered writer to satisfy the OutputWriter interface
